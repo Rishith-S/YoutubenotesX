@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  --background: #000000;
+}
+
+h1,h2{
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.cdx-block,
+.ce-header,
+.inlineToolButton,
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+  background-color: #000;
+  color: white;
+}
+
+.ce-toolbar__plus:hover,
+.ce-toolbar__settings-btn:hover,
+.cdx-loader,
+.cdx-button {
+  color: white;
+  background-color: #000;
+}
+
+.cdx-search-field.ce-popover__search{
+  color:#000;
+}
+
+.cdx-button:hover {
+  background-color: #000;
+}
+
+.ce-popover-item.ce-popover-item--focused {
+  color: #0197f6;
+  font-weight: 900;
+}
+
+
+.ce-block__content, 
+.ce-toolbar__content {
+  min-width: 90%; 
+}
+
+body {
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #505050;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(153, 153, 153);
+}
+
+.logout:hover .logoutIcon {
+  fill: #ff6b6b;
+}
+
+.logout:hover .logoutText {
+  color: #ff6b6b;
+}
