@@ -50,7 +50,13 @@ playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
     const response = await axios.get(url);
     const response2 = await axios.get(url2);
     const playListTitle = response2.data.items[0].snippet.title;
-    const playListImage = response2.data.items[0].snippet.thumbnails.maxres.url;
+    const thumbnails = response2.data.items[0].snippet.thumbnails;
+    const playListImage =
+      (thumbnails.maxres && thumbnails.maxres.url) ||
+      (thumbnails.high && thumbnails.high.url) ||
+      (thumbnails.medium && thumbnails.medium.url) ||
+      (thumbnails.default && thumbnails.default.url) ||
+      "";
     const data = response.data;
     if (data && (data as unknown as any).items) {
       let videoList = (data as unknown as any).items.map(

@@ -9,7 +9,7 @@ const useRefreshToken= ()=>{
     const navigate = useNavigate()
     const refresh = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/refresh`);
+            const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/auth/refresh`,{withCredentials:true});
             if (res.data) {
                 const userDetailsRes = res.data as unknown as UserDetails;
                 dispatch(setUserDetails({

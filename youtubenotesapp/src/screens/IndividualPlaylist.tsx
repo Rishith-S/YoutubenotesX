@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
 import { useParams } from "react-router-dom";
 import { Editor } from "../components/Editor";
@@ -11,12 +11,40 @@ export default function IndividualPlaylist() {
   const { playlistId } = useParams();
   const [playListDetails, setPlayListVideos] = useState<Playlists>();
   const [loading, setLoading] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
+
+  // Custom hook for keyboard navigation
+  const useKeyboardNavigation = (
+    totalVideos: number,
+    setSelectedVideo: React.Dispatch<React.SetStateAction<number>>
+  ) => {
+    const shiftNHandler = useCallback((event: KeyboardEvent) => {
+      if (event.shiftKey && event.key === "N") {
+        setSelectedVideo(prev => prev < totalVideos - 1 ? prev + 1 : prev);
+      }
+    }, [totalVideos, setSelectedVideo]);
+
+    const shiftPHandler = useCallback((event: KeyboardEvent) => {
+      if (event.shiftKey && event.key === "P") {
+        setSelectedVideo(prev => prev > 0 ? prev - 1 : prev);
+      }
+    }, [setSelectedVideo]);
+
+    useEffect(() => {
+      window.addEventListener("keydown", shiftNHandler);
+      window.addEventListener("keydown", shiftPHandler);
+      return () => {
+        window.removeEventListener("keydown", shiftNHandler);
+        window.removeEventListener("keydown", shiftPHandler);
+      };
+    }, [shiftNHandler, shiftPHandler]);
+  };
+
   const fetchVideos = async () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `${
-          import.meta.env.VITE_SERVER_URL
+        `${import.meta.env.VITE_SERVER_URL
         }/playList/getPlaylistVideos/${playlistId}`,
         { withCredentials: true }
       );
@@ -38,16 +66,41 @@ export default function IndividualPlaylist() {
   useEffect(() => {
     fetchVideos();
   }, []);
-  const [selectedVideo, setSelectedVideo] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [selectedVideo, setSelectedVideo] = useState<number>(() => {
+    // Try to find the first incomplete video
+    if (playListDetails?.playListContent) {
+      const idx = playListDetails.playListContent.findIndex(
+        (video) => !video.completed
+      );
+      // If all videos are completed, default to 0
+      return idx === -1 ? 0 : idx;
+    }
+    return 0;
+  });
+
+  // Update selectedVideo when playListDetails changes
+  useEffect(() => {
+    if (playListDetails?.playListContent) {
+      const idx = playListDetails.playListContent.findIndex(
+        (video) => !video.completed
+      );
+      setSelectedVideo(idx === -1 ? 0 : idx);
+    }
+  }, [playListDetails]);
+
+  useKeyboardNavigation(
+    playListDetails?.playListContent?.length || 0,  
+    setSelectedVideo
+  );
+
+
   return loading ? (
     <LoadingScreen />
   ) : (
     <div>
       <div
-        className={`absolute bg-transparent z-50 ${
-          showSidebar ? "w-screen" : "w-auto"
-        }`}
+        className={`absolute bg-transparent z-50 ${showSidebar ? "w-screen" : "w-auto"
+          }`}
       >
         <div className="w-full md:w-[55%]">
           <Sidebar
@@ -66,10 +119,12 @@ export default function IndividualPlaylist() {
               {/* Video Container */}
               <div className="flex h-[75vh] w-full p-4">
                 <ReactPlayer
-                  url={`${playListDetails?.playListContent[selectedVideo].videoUrl}?autoplay=1`}
+                  url={`${playListDetails?.playListContent[selectedVideo].videoUrl}`}
                   width="100%"
                   height="100%"
                   controls={true}
+                  playing={true}
+                  playbackRate={2}
                 />
               </div>
               {/* Editor Container */}

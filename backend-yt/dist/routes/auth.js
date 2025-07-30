@@ -16,16 +16,18 @@ const express_1 = require("express");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const query_string_1 = __importDefault(require("query-string"));
 const config_1 = require("../config/config");
+const prismaClient_1 = __importDefault(require("../config/prismaClient"));
 const verifyAuth_1 = __importDefault(require("../middlewares/verifyAuth"));
 const authRouter = (0, express_1.Router)();
 authRouter.get('/hello', (req, res) => {
     res.status(200).json({ "message": "hello" });
 });
-authRouter.get('/url', (_, res) => {
+authRouter.get('/url/:type', (req, res) => {
+    const type = req.params.type;
     res.json({
         url: `${config_1.config.authUrl}?${query_string_1.default.stringify({
             client_id: process.env.GOOGLE_CLIENT_ID,
-            redirect_uri: process.env.REDIRECT_URL,
+            redirect_uri: type === "login" ? process.env.REDIRECT_URL_LOGIN : process.env.REDIRECT_URL_SIGNUP,
             response_type: 'code',
             scope: 'openid profile email',
             access_type: 'offline',
@@ -50,7 +52,7 @@ authRouter.get('/refresh', verifyAuth_1.default, (req, res) => __awaiter(void 0,
     res.send({ name: user.name, email: user.email, accessToken });
 }));
 authRouter.get('/token', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { code } = req.query;
+    const { code, type } = req.query;
     if (!code)
         res.status(400).json({ message: 'Authorization code must be provided' });
     else {
@@ -60,7 +62,7 @@ authRouter.get('/token', (req, res) => __awaiter(void 0, void 0, void 0, functio
                 client_secret: process.env.GOOGLE_CLIENT_SECRET,
                 code,
                 grant_type: 'authorization_code',
-                redirect_uri: process.env.REDIRECT_URL,
+                redirect_uri: type === "login" ? process.env.REDIRECT_URL_LOGIN : process.env.REDIRECT_URL_SIGNUP,
             };
             const response = yield fetch('https://oauth2.googleapis.com/token', {
                 method: "POST",
@@ -77,6 +79,44 @@ authRouter.get('/token', (req, res) => __awaiter(void 0, void 0, void 0, functio
             }
             const { email, name, picture } = jsonwebtoken_1.default.decode(id_token);
             const user = { name, email, picture };
+            let message = '';
+            let statusCode = 200;
+            if (type === 'login') {
+                const userRecord = yield prismaClient_1.default.user.findUnique({
+                    where: {
+                        email: user.email
+                    }
+                });
+                if (!userRecord) {
+                    res.status(404).json({
+                        "message": "account not found please signup"
+                    });
+                    return;
+                }
+                else {
+                    statusCode = 200;
+                    message = "account login successful";
+                }
+            }
+            else {
+                try {
+                    yield prismaClient_1.default.user.create({
+                        data: {
+                            name: user.name,
+                            email: user.email,
+                            accountType: 'oauth'
+                        }
+                    });
+                    statusCode = 200;
+                    message = "account created successfully";
+                }
+                catch (error) {
+                    res.status(422).json({
+                        "message": "problem in account creation"
+                    });
+                    return;
+                }
+            }
             // Sign a new token
             const accessToken = jsonwebtoken_1.default.sign({
                 user
@@ -90,7 +130,7 @@ authRouter.get('/token', (req, res) => __awaiter(void 0, void 0, void 0, functio
                 secure: false,
                 maxAge: 3 * 24 * 60 * 60 * 1000
             });
-            res.send({ name: user.name, email: user.email, accessToken });
+            res.status(statusCode).send({ name: user.name, email: user.email, accessToken, message });
         }
         catch (err) {
             console.error('Error: ', err);
@@ -98,28 +138,7 @@ authRouter.get('/token', (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
     }
 }));
-authRouter.get('/logged_in', (req, res) => {
-    try {
-        // Get token from cookie
-        const token = req.cookies.token;
-        if (!token)
-            res.json({ loggedIn: false });
-        else {
-            const { user } = jsonwebtoken_1.default.verify(token, config_1.config.tokenSecret);
-            const newToken = jsonwebtoken_1.default.sign({ user }, config_1.config.tokenSecret, {
-                expiresIn: config_1.config.tokenExpiration,
-            });
-            // Reset token in cookie
-            res.cookie('token', newToken, {
-                maxAge: config_1.config.tokenExpiration,
-                httpOnly: true,
-            });
-            res.json({ loggedIn: true, user });
-        }
-    }
-    catch (err) {
-        res.json({ loggedIn: false });
-    }
+authRouter.post('/login', (req, res) => {
 });
 authRouter.post('/logout', (_, res) => {
     // clear cookie
