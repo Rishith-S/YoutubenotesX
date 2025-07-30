@@ -16,11 +16,11 @@ export interface UserJwtToken {
   exp: number
 }
 
-playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
-  const playListId = req.params.playListId
-  const jwtToken = req.cookies.jwt
+playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res, next) => {
+  const playListId = req.params.playListId;
+  const jwtToken = req.cookies.jwt;
   try {
-    const jwtDetails = jwt.decode(jwtToken) as unknown as UserJwtToken;
+    const jwtDetails = jwt.decode(jwtToken) as UserJwtToken;
     const userDetails = await prisma.user.findUnique({
       where: {
         email: jwtDetails.user.email

@@ -122,9 +122,9 @@ authRouter.get('/token', async (req: Request, res: Response) => {
       )
       res.cookie('jwt', refreshToken, {
         httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        maxAge: 3 * 24 * 60 * 60 * 1000
+        sameSite: 'none',
+        secure: true,
+        maxAge: 3 * 24 * 60 * 60 * 1000,
       });
       res.status(statusCode).send({ name: user.name, email: user.email, accessToken, message });
     } catch (err) {
