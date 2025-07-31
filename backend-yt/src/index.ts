@@ -10,6 +10,11 @@ import notesRouter from "./routes/notes";
 const app = express()
 
 dotenv.config()
+
+app.get('/',(req,res)=>{
+  res.status(200).json({'message':'hello'})
+})
+
 app.use(cors({
   origin: process.env.CLIENT_URL!,
   credentials: true
@@ -17,10 +22,6 @@ app.use(cors({
 app.use(cookieParser())
 app.use(express.json())
 app.use(allowCredentials)
-
-app.get('/',(req,res)=>{
-  res.status(200).json({'message':'hello'})
-})
 
 app.use('/auth', authRouter)
 app.use('/playList', playListRouter)
