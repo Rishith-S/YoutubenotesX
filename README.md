@@ -1,5 +1,10 @@
 # NoteTube - Distraction-Free YouTube Learning Platform
 
+
+https://github.com/user-attachments/assets/419d9045-7106-4b6e-828b-4af8b6963091
+
+
+
 A minimalist web application designed for serious learners who want to take structured notes while watching YouTube playlists without distractions.
 
 ## Project Overview
