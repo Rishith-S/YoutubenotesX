@@ -232,7 +232,6 @@ export function Editor({
     };
   }, [videoId]);
 
-  // Initialize editor when loading completes
   useEffect(() => {
     if (!loading) {
       initEditor();

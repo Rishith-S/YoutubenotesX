@@ -80,7 +80,7 @@ export default function IndividualPlaylist() {
         )
       );
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -130,8 +130,7 @@ export default function IndividualPlaylist() {
         { videoId },
         { withCredentials: true }
       );
-      
-      // Refetch playlist details
+
       await fetchVideos();
       setShowAddVideoModal(false);
       setNewVideoUrl("");
@@ -268,9 +267,7 @@ export default function IndividualPlaylist() {
                   <Editor
                     videoId={playListDetails?.playListContent[selectedVideo].videoId}
                     playListId={playlistId as string}
-                    onSave={() => {
-                      console.log('Notes saved successfully');
-                    }}
+                    onSave={async () => {}}
                   />
                 </div>
               </div>

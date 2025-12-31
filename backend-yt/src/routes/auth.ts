@@ -4,6 +4,7 @@ import queryString from 'query-string';
 import { config } from '../config/config';
 import prisma from '../config/prismaClient';
 import verifyAuth from '../middlewares/verifyAuth';
+import { authLimiter } from '../middlewares/rateLimiter';
 import bcrypt from 'bcrypt';
 
 const authRouter = Router()
@@ -35,7 +36,6 @@ authRouter.get('/refresh', verifyAuth, async (req, res) => {
   }
   const { email, name, picture } = jwt.decode(token) as jwt.JwtPayload;
   const user = { name, email, picture }
-  // Sign a new token
   const accessToken = jwt.sign(
     {
       user
@@ -45,7 +45,7 @@ authRouter.get('/refresh', verifyAuth, async (req, res) => {
   res.send({ name: user.name, email: user.email, accessToken });
 })
 
-authRouter.get('/token', async (req: Request, res: Response) => {
+authRouter.get('/token', authLimiter, async (req: Request, res: Response) => {
   const { code, type } = req.query
   if (!code) res.status(400).json({ message: 'Authorization code must be provided' })
   else {
@@ -108,7 +108,6 @@ authRouter.get('/token', async (req: Request, res: Response) => {
           return
         }
       }
-      // Sign a new token
       const accessToken = jwt.sign(
         {
           user
@@ -135,7 +134,8 @@ authRouter.get('/token', async (req: Request, res: Response) => {
   }
 })
 
-authRouter.post('/signup',async(req,res)=>{
+// Apply strict rate limiting to signup endpoint
+authRouter.post('/signup', authLimiter, async(req,res)=>{
   const {name,email,password} = req.body
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if(!name || !email || !password || name === "" || email === "" || password === "" || !emailRegex.test(email)){
@@ -165,7 +165,7 @@ authRouter.post('/signup',async(req,res)=>{
   })
 })
 
-authRouter.post('/login',async(req,res)=>{
+authRouter.post('/login', authLimiter, async(req,res)=>{
   const {email,password} = req.body
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !password || email === "" || password === "" || !emailRegex.test(email)) {
@@ -207,7 +207,6 @@ authRouter.post('/login',async(req,res)=>{
 })
 
 authRouter.post('/logout', (_, res) => {
-  // clear cookie
   res.clearCookie('token').json({ message: 'Logged out' })
 })
 

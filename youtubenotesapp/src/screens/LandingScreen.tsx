@@ -66,8 +66,8 @@ const LandingScreen = () => {
             </h1>
             <p className="text-lg sm:text-xl text-zinc-400 mb-10 leading-relaxed max-w-2xl mx-auto">
               The minimalist workspace for serious learners. Take rich markdown
-              notes on YouTube videos, organize them into playlists, and use AI
-              to summarize key points instantly.
+              notes on YouTube videos and organize them into playlists for
+              distraction-free learning.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button

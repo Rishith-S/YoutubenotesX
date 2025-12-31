@@ -1,10 +1,13 @@
 import express from "express"
 import verifyAuth from "../middlewares/verifyAuth"
+import { playlistLimiter } from "../middlewares/rateLimiter"
 import jwt from 'jsonwebtoken'
 import prisma from "../config/prismaClient"
 import axios from "axios"
 
 const playListRouter = express.Router()
+
+playListRouter.use(playlistLimiter);
 
 export interface UserJwtToken {
   user: {
@@ -114,7 +117,7 @@ playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
       })
     }
   } catch (error) {
-    console.log(error)
+    console.error(error)
     res.status(500).json({
       "message": "Internal Server error"
     })
@@ -125,7 +128,6 @@ playListRouter.get('/getPlaylists', verifyAuth, async (req, res) => {
   const jwtToken = req.cookies.jwt
   try {
     const jwtDetails = jwt.decode(jwtToken) as unknown as UserJwtToken;
-    console.log(jwtDetails);
     const userDetails = await prisma.user.findUnique({
       where: {
         email: jwtDetails.user.email
@@ -142,12 +144,24 @@ playListRouter.get('/getPlaylists', verifyAuth, async (req, res) => {
         userId: userDetails.id
       }
     })
+    
+    const playlistsWithProgress = userPlayLists.map(playlist => {
+      const completedCount = (playlist.playListContent as any[]).filter(
+        video => video.completed === true
+      ).length;
+      
+      return {
+        ...playlist,
+        completedCount
+      };
+    });
+    
     res.status(200).json({
-      "playLists": userPlayLists
+      "playLists": playlistsWithProgress
     })
   } catch (error) {
-    console.log(error)
-    res.status(500).json({
+    console.error(error)
+    res.status(422).json({
       "message": "Internal Server error"
     })
   }
@@ -251,7 +265,7 @@ playListRouter.get('/markAsCompleted/:playListDocumentId/:videoIndex', verifyAut
     })
     res.status(200).json({ "message": "List Updated" })
   } catch (error) {
-    console.log(error)
+    console.error(error)
     res.status(500).json({
       "message": "Internal Server error"
     })
@@ -314,7 +328,7 @@ playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
       "playlist": playlist
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({
       "message": "Internal Server error"
     });
@@ -392,7 +406,7 @@ playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, r
       "message": "Video added to playlist successfully"
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({
       "message": "Internal Server error"
     });

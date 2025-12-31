@@ -46,11 +46,8 @@ export default function Homescreen() {
         setPlayListVideos(
           (res.data as unknown as { playLists: Playlists[] }).playLists
         );
-        console.log(
-          (res.data as unknown as { playLists: Playlists[] }).playLists
-        );
       } catch (error) {
-        console.log(error);
+        console.error(error);
       } finally {
         setLoading(false);
         setShouldRefetch(false);
@@ -106,7 +103,7 @@ export default function Homescreen() {
         prev.filter((item) => item.id != playListDocumentId)
       );
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -166,7 +163,7 @@ export default function Homescreen() {
         {playListVideos.map((item) => (
           <div
             key={item.id}
-            className="group relative rounded-2xl overflow-hidden bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer"
+            className="group relative rounded-2xl overflow-hidden bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer flex flex-col"
           >
             {/* Thumbnail */}
             <div
@@ -183,13 +180,35 @@ export default function Homescreen() {
             </div>
 
             {/* Content */}
-            <div onClick={() => navigate(`/${item.id}`)} className="p-4">
+            <div onClick={() => navigate(`/${item.id}`)} className="p-4 pb-3 flex-grow">
               <h3 className="text-white font-semibold text-base mb-2 line-clamp-2">
                 {item.playListTitle}
               </h3>
-              <p className="text-zinc-500 text-sm mb-3">
-                {item.playListContent[0]?.title || "Programming with Mosh"}
+              <p className="text-zinc-500 text-sm">
+                {item.playListContent.length} videos
               </p>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="px-4 pb-4 space-y-2 mt-auto">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400">Progress</span>
+                <span className="text-zinc-400">
+                  {item.completedCount || 0}/{item.playListContent.length}
+                </span>
+              </div>
+              <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-red-600 h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${
+                      item.playListContent.length > 0
+                        ? ((item.completedCount || 0) / item.playListContent.length) * 100
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
             </div>
 
             {/* Delete Button */}

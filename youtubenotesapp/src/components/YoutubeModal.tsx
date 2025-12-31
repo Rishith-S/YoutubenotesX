@@ -134,7 +134,7 @@ const YouTubeModal = ({
                       setYoutubeLink("");
                       onSuccess?.();
                     } catch (error) {
-                      console.log(error);
+                      console.error(error);
                       toast.error("Failed to add playlist. Please try again.");
                     } finally {
                       setLoading(false);

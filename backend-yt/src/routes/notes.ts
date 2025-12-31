@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express"
 import verifyAuth from "../middlewares/verifyAuth";
+import { notesLimiter } from "../middlewares/rateLimiter";
 import multer from "multer";
 import path from "path";
 import { supabase } from "../config/supabase";
@@ -8,6 +9,8 @@ import { UserJwtToken } from "./playList";
 import prisma from "../config/prismaClient";
 
 const notesRouter = express.Router()
+
+notesRouter.use(notesLimiter);
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
