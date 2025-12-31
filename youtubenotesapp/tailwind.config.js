@@ -4,6 +4,15 @@ export const content = [
 ];
 export const theme = {
   extend: {
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      display: ['Playfair Display', 'serif'],
+    },
+    colors: {
+      red: {
+        50: 'oklch(0.577 0.245 27.325)',
+      },
+    },
     keyframes: {
       flicker: {
         '0%, 100%': { opacity: '1' },

@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Bounce, ToastContainer, toast } from "react-toastify";
-import DeleteIcon from "../assets/DeleteIcon";
 import LoadingScreen from "../components/LoadingScreen";
 import YouTubeModal from "../components/YoutubeModal";
 import { UserDetails, clearMessage } from "../features/userDetailSlice";
+import { Plus, Trash2, Grid2x2 } from "lucide-react";
 
 export interface IVideos {
   videoUrl: string;
@@ -29,9 +29,9 @@ export default function Homescreen() {
   const [playListVideos, setPlayListVideos] = useState<Playlists[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldRefetch, setShouldRefetch] = useState(false);
   const name = localStorage.getItem("name");
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState("");
   const message = useSelector((state: UserDetails) => state.message);
   const dispatch = useDispatch();
 
@@ -46,27 +46,20 @@ export default function Homescreen() {
         setPlayListVideos(
           (res.data as unknown as { playLists: Playlists[] }).playLists
         );
-        console.log((res.data as unknown as { playLists: Playlists[] }).playLists)
+        console.log(
+          (res.data as unknown as { playLists: Playlists[] }).playLists
+        );
       } catch (error) {
         console.log(error);
       } finally {
         setLoading(false);
+        setShouldRefetch(false);
       }
     };
     fetch();
-  }, [isOpen]);
+  }, [shouldRefetch]);
 
   useEffect(() => {
-    const currentHour = new Date().getHours();
-    let newGreeting;
-    if (currentHour < 12) {
-      newGreeting = "Good Morning";
-    } else if (currentHour < 18) {
-      newGreeting = "Good Afternoon";
-    } else {
-      newGreeting = "Good Evening";
-    }
-    setGreeting(newGreeting);
     if (message.length != 0) {
       toast(message, {
         position: "top-right",
@@ -85,12 +78,13 @@ export default function Homescreen() {
 
   const handleDelete = async (playListDocumentId: number) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const res = await axios.delete(
         `${
           import.meta.env.VITE_SERVER_URL
-        }/playList/deletePlaylist/${playListDocumentId}`,{
-          withCredentials:true
+        }/playList/deletePlaylist/${playListDocumentId}`,
+        {
+          withCredentials: true,
         }
       );
       const message = (res.data as { message: string }).message;
@@ -108,23 +102,26 @@ export default function Homescreen() {
         });
         dispatch(clearMessage());
       }
-      setPlayListVideos(prev=>prev.filter(item=>item.id!=playListDocumentId))
+      setPlayListVideos((prev) =>
+        prev.filter((item) => item.id != playListDocumentId)
+      );
     } catch (error) {
-      console.log(error)
-    } finally{
-      setLoading(false)
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="p-4 xl:px-32 xl:py-16">
+    <div className="min-h-screen bg-black pt-20 px-6 pb-8">
       <YouTubeModal
         loading={loading}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         setLoading={setLoading}
+        onSuccess={() => setShouldRefetch(true)}
       />
       <ToastContainer
         position="top-right"
@@ -139,70 +136,72 @@ export default function Homescreen() {
         theme="dark"
         transition={Bounce}
       />
-      <p className="text-white text-4xl mb-4">
-        {greeting}, {name}
-      </p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 gap-4">
-        <div
-          onClick={() => {
-            setIsOpen(true);
-          }}
-          className={`w-100 ${
-            playListVideos.length === 0 ? "h-[250px]" : "h-auto"
-          } rounded-xl flex items-center justify-center border border-gray-700 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer`}
-        >
-          <p className="text-gray-400 text-md font-light">
-            + Add video/playlist
-          </p>
+
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-3">
+          <div className="flex gap-2 items-center">
+            <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center border border-zinc-800">
+              <Grid2x2 color="white" />
+            </div>
+            <div>
+              <h1 className="text-white text-xl font-bold">All Notes</h1>
+              <p className="text-zinc-400 text-sm">
+                {playListVideos.length} videos • Welcome back, {name}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg shadow-red-900/20"
+          >
+            <Plus className="w-5 h-5" />
+            Add Playlist
+          </button>
         </div>
-        {playListVideos.map((item, index) => (
+      </div>
+
+      {/* Video Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {playListVideos.map((item) => (
           <div
             key={item.id}
-            className="rounded-xl flex flex-col border border-gray-700 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer text-wrap"
+            className="group relative rounded-2xl overflow-hidden bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer"
           >
-            <img
-              onClick={() => {
-                navigate(`/${item.id}`);
-              }}
-              className="w-full rounded-t-xl object-fill"
-              src={item.playListImage}
-              alt="Random"
-            />
+            {/* Thumbnail */}
             <div
-              onClick={() => {
-                navigate(`/${item.id}`);
-              }}
-              className="w-full bg-gray-200 h-1 dark:bg-gray-700"
+              onClick={() => navigate(`/${item.id}`)}
+              className="relative aspect-video overflow-hidden"
             >
-              <div
-                className="bg-orange-600 h-1"
-                style={{
-                  width: `${
-                    (item.completedCount / item.playListContent.length) * 100
-                  }%`,
-                }}
+              <img
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                src={item.playListImage}
+                alt={item.playListTitle}
               />
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
 
-            <div className="flex flex-row px-4 py-2 items-center justify-center">
-              <p
-                onClick={() => {
-                  navigate(`/${item.id}`);
-                }}
-                key={index}
-                className="w-full text-white cursor-pointer break-words text-wrap"
-              >
-                {item.playListTitle.length > 20
-                  ? item.playListTitle.slice(0, 20) + "..."
-                  : item.playListTitle}
+            {/* Content */}
+            <div onClick={() => navigate(`/${item.id}`)} className="p-4">
+              <h3 className="text-white font-semibold text-base mb-2 line-clamp-2">
+                {item.playListTitle}
+              </h3>
+              <p className="text-zinc-500 text-sm mb-3">
+                {item.playListContent[0]?.title || "Programming with Mosh"}
               </p>
-              <div
-                onClick={() => handleDelete(item.id)}
-                className="w-10 h-10 rounded-lg p-2 hover:bg-black"
-              >
-                <DeleteIcon fill={"#ee6b6e"} />
-              </div>
             </div>
+
+            {/* Delete Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(item.id);
+              }}
+              className="absolute top-3 right-3 w-8 h-8 bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:border-red-600"
+            >
+              <Trash2 className="w-4 h-4 text-white" />
+            </button>
           </div>
         ))}
       </div>

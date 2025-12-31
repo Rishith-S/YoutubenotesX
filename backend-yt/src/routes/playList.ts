@@ -16,7 +16,7 @@ export interface UserJwtToken {
   exp: number
 }
 
-playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res, next) => {
+playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
   const playListId = req.params.playListId;
   const jwtToken = req.cookies.jwt;
   try {
@@ -125,6 +125,7 @@ playListRouter.get('/getPlaylists', verifyAuth, async (req, res) => {
   const jwtToken = req.cookies.jwt
   try {
     const jwtDetails = jwt.decode(jwtToken) as unknown as UserJwtToken;
+    console.log(jwtDetails);
     const userDetails = await prisma.user.findUnique({
       where: {
         email: jwtDetails.user.email
@@ -256,5 +257,146 @@ playListRouter.get('/markAsCompleted/:playListDocumentId/:videoIndex', verifyAut
     })
   }
 })
+
+playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
+  const { playlistName, videoId } = req.body;
+  const jwtToken = req.cookies.jwt;
+  
+  try {
+    const jwtDetails = jwt.decode(jwtToken) as UserJwtToken;
+    const userDetails = await prisma.user.findUnique({
+      where: {
+        email: jwtDetails.user.email
+      }
+    });
+    
+    if (!userDetails) {
+      res.status(404).json({
+        "message": "Account not found"
+      });
+      return;
+    }
+
+    // Fetch video details from YouTube API
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
+    const videoResponse = await axios.get(videoUrl);
+    
+    if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+      res.status(404).json({
+        "message": "Video not found"
+      });
+      return;
+    }
+
+    const videoData = videoResponse.data.items[0];
+    const videoInfo = {
+      title: videoData.snippet.title,
+      videoId: videoId,
+      videoUrl: `https://www.youtube.com/embed/${videoId}`,
+      thumbnail: videoData.snippet.thumbnails.default,
+      completed: false
+    };
+
+    // Create custom playlist
+    const playlist = await prisma.playlist.create({
+      data: {
+        userId: userDetails.id,
+        playListId: `custom-${Date.now()}`, // Generate unique ID for custom playlist
+        playListTitle: playlistName,
+        playListImage: videoData.snippet.thumbnails.high?.url || videoData.snippet.thumbnails.default.url,
+        playListContent: [videoInfo],
+        completedCount: 0
+      }
+    });
+
+    res.status(200).json({
+      "message": "Custom playlist created successfully",
+      "playlist": playlist
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      "message": "Internal Server error"
+    });
+  }
+});
+
+playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, res) => {
+  const playlistId = req.params.playlistId;
+  const { videoId } = req.body;
+  const jwtToken = req.cookies.jwt;
+  
+  try {
+    const jwtDetails = jwt.decode(jwtToken) as UserJwtToken;
+    const userDetails = await prisma.user.findUnique({
+      where: {
+        email: jwtDetails.user.email
+      }
+    });
+    
+    if (!userDetails) {
+      res.status(404).json({
+        "message": "Account not found"
+      });
+      return;
+    }
+
+    // Get existing playlist
+    const playlist = await prisma.playlist.findFirst({
+      where: {
+        id: Number(playlistId),
+        userId: userDetails.id
+      }
+    });
+
+    if (!playlist) {
+      res.status(404).json({
+        "message": "Playlist not found"
+      });
+      return;
+    }
+
+    // Fetch video details from YouTube API
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
+    const videoResponse = await axios.get(videoUrl);
+    
+    if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+      res.status(404).json({
+        "message": "Video not found"
+      });
+      return;
+    }
+
+    const videoData = videoResponse.data.items[0];
+    const videoInfo = {
+      title: videoData.snippet.title,
+      videoId: videoId,
+      videoUrl: `https://www.youtube.com/embed/${videoId}`,
+      thumbnail: videoData.snippet.thumbnails.default,
+      completed: false
+    };
+
+    // Add video to playlist
+    const updatedContent = [...(playlist.playListContent as any[]), videoInfo];
+    
+    await prisma.playlist.update({
+      where: {
+        id: Number(playlistId)
+      },
+      data: {
+        playListContent: updatedContent
+      }
+    });
+
+    res.status(200).json({
+      "message": "Video added to playlist successfully"
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      "message": "Internal Server error"
+    });
+  }
+});
 
 export default playListRouter

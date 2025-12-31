@@ -38,13 +38,13 @@ export default function Callback() {
           localStorage.setItem("name", userDetails.name);
           localStorage.setItem("email", userDetails.email);
           localStorage.setItem("accessToken", userDetails.accessToken);
-          navigate("/");
+          navigate("/home");
         } catch (err) {
           console.error(err);
           navigate("/auth");
         }
       } else if (accessToken) {
-        navigate("/");
+        navigate("/home");
       }
     })();
   }, [navigate]);

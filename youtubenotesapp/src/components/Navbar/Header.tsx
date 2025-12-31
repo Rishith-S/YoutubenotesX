@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import LogoutIcon from '../../assets/LogoutIcon';
 import { useDispatch } from 'react-redux';
 import { userLogout } from '../../features/userDetailSlice';
+import {Play, LogOut} from "lucide-react"
 
 export default function Header() {
   const navigate = useNavigate()
@@ -12,12 +12,24 @@ export default function Header() {
     navigate('/auth')
   }
   return (
-    <div className="h-20 flex items-center border-b-2 border-orange-500 p-4 justify-between w-screen">
-        <p onClick={()=>{navigate('/')}} className="cursor-pointer text-2xl font-extrabold bg-gradient-to-b from-orange-400 via-orange-500  to-orange-800 inline-block text-transparent bg-clip-text">YoutubeXnoteS</p>
-        <div onClick={logOut} className='flex flex-row gap-2 items-center  hover:cursor-pointer logout'>
-          <LogoutIcon />
-          <p className='text-white logoutText'>Logout</p>
+    <nav className="border-b border-zinc-800/50 backdrop-blur-sm fixed w-full z-50 bg-zinc-950/80">
+        <div className="mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-white font-display cursor-pointer" onClick={()=>navigate("/home")}>
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-900/20">
+              <Play className="w-4 h-4 text-white fill-white" />
+            </div>
+            NoteTube
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={logOut}
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-red-50 rounded-lg transition-all text-sm font-medium"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </div>
-    </div>
+      </nav>
   )
 }

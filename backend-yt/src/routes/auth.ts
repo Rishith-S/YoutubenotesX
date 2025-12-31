@@ -4,6 +4,7 @@ import queryString from 'query-string';
 import { config } from '../config/config';
 import prisma from '../config/prismaClient';
 import verifyAuth from '../middlewares/verifyAuth';
+import bcrypt from 'bcrypt';
 
 const authRouter = Router()
 
@@ -134,8 +135,75 @@ authRouter.get('/token', async (req: Request, res: Response) => {
   }
 })
 
-authRouter.post('/login',(req,res)=>{
+authRouter.post('/signup',async(req,res)=>{
+  const {name,email,password} = req.body
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!name || !email || !password || name === "" || email === "" || password === "" || !emailRegex.test(email)){
+    res.status(400).json({
+      "message" : "name, email and password are required"
+    })
+    return
+  }
+  const hashedPassword = await bcrypt.hash(password,10)
+  const user = await prisma.user.create({
+    data : {
+      name,
+      email,
+      password : hashedPassword,
+      accountType : 'email'
+    }
+  })
+  const accessToken = jwt.sign(
+    {
+      user
+    },
+    process.env.TOKEN_SECRET!, ({ expiresIn: '1d' })
+  )
+  res.status(200).json({
+    "message" : "account created successfully",
+    "accessToken" : accessToken
+  })
+})
+
+authRouter.post('/login',async(req,res)=>{
+  const {email,password} = req.body
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !password || email === "" || password === "" || !emailRegex.test(email)) {
+    res.status(400).json({
+      "message" : "email and password are required"
+    })
+    return
+  }
+  const user = await prisma.user.findUnique({
+    where : {
+      email
+    }
+  })
+  if(!user){
+    res.status(404).json({
+      "message" : "account not found please signup"
+    })
+    return
+  }
+  else{}
+    const isPasswordValid = await bcrypt.compare(password,user.password!)
+    if(!isPasswordValid){
+      res.status(401).json({
+        "message" : "invalid password"
+      })
+      return
+    }
   
+  const accessToken = jwt.sign(
+    {
+      user
+    },
+    process.env.TOKEN_SECRET!, ({ expiresIn: '1d' })
+  )
+  res.status(200).json({
+    "message" : "account login successful",
+    "accessToken" : accessToken
+  })
 })
 
 authRouter.post('/logout', (_, res) => {
