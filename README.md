@@ -11,8 +11,6 @@ A minimalist web application designed for serious learners who want to take stru
 
 NoteTube is a full-stack application that provides a clean, focused environment for educational content consumption. The platform eliminates YouTube's ads, recommendations, and other distractions, allowing students and self-learners to concentrate solely on the content that matters.
 
-Developed as part of coursework at Keshav Memorial Institute of Technology (KMIT), Hyderabad, this project demonstrates modern web development practices and addresses a real problem faced by students during online learning.
-
 ## Key Features
 
 ### Distraction-Free Learning Environment
@@ -218,20 +216,5 @@ This project was developed as an academic project. If you're a fellow student or
 - Video playback speed controls
 - Keyboard shortcuts for common actions
 
-## License
-
-This project is open source and available for educational purposes.
-
-## Acknowledgments
-
-- Built by students at Keshav Memorial Institute of Technology (KMIT), Hyderabad
-- Special thanks to the faculty for guidance on full-stack development practices
-- Inspired by the need for better tools for online education
-
-## Contact
-
-For questions, suggestions, or collaboration opportunities, please open an issue on the GitHub repository.
-
----
 
 Developed with dedication to improving the online learning experience for students everywhere.
