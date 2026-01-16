@@ -73,14 +73,14 @@ export default function Sidebar({
         setIsLoading(false);
         return;
       }
-      
+
       const parsed = JSON.parse(stored) as Playlists;
       if (!parsed || !parsed.playListContent) {
         setError("Invalid playlist data");
         setIsLoading(false);
         return;
       }
-      
+
       setPlayListDetails(parsed);
       setIsLoading(false);
     } catch (err) {
@@ -183,9 +183,8 @@ export default function Sidebar({
       </div>
       <button
         onClick={() => setShowSidebar(true)}
-        className={`p-2 hover:bg-zinc-800 rounded-lg transition-colors absolute top-2 right-2 focus:outline-none focus:ring-2 focus:ring-red-500 ${
-          showSidebar && "scale-0"
-        }`}
+        className={`p-2 hover:bg-zinc-800 rounded-lg transition-colors absolute top-2 right-2 focus:outline-none focus:ring-2 focus:ring-red-500 ${showSidebar && "scale-0"
+          }`}
         aria-label="Open sidebar"
       >
         <ChevronRight className="w-5 h-5 text-zinc-400 hover:text-white" />
@@ -207,11 +206,11 @@ interface IndividualVideoCardProps {
 export const IndividualVideoCard = React.forwardRef<
   HTMLDivElement,
   IndividualVideoCardProps
->(({ 
-  index, 
-  selectedVideo, 
-  setSelectedVideo, 
-  playListDocumentId, 
+>(({
+  index,
+  selectedVideo,
+  setSelectedVideo,
+  playListDocumentId,
   video: initialVideo,
   playListDetails,
   setPlayListDetails
@@ -221,24 +220,24 @@ export const IndividualVideoCard = React.forwardRef<
 
   const handleToggleCompletion = useCallback(async () => {
     if (isUpdating) return;
-    
+
     setIsUpdating(true);
-    
+
     try {
       // Optimistic update
       const updatedVideo = { ...video, completed: !video.completed };
       setVideo(updatedVideo);
 
       // Update playlist in localStorage
-      const updatedPlayListContent = playListDetails.playListContent.map((item, idx) => 
+      const updatedPlayListContent = playListDetails.playListContent.map((item, idx) =>
         idx === index ? updatedVideo : item
       );
-      
+
       const updatedPlayListDetails = {
         ...playListDetails,
         playListContent: updatedPlayListContent,
       };
-      
+
       setPlayListDetails(updatedPlayListDetails);
 
       // API call
@@ -248,10 +247,10 @@ export const IndividualVideoCard = React.forwardRef<
       );
     } catch (error) {
       console.error("Failed to update video completion:", error);
-      
+
       // Revert optimistic update
       setVideo(initialVideo);
-      
+
       // Revert playlist update
       setPlayListDetails(playListDetails);
     } finally {
@@ -265,8 +264,8 @@ export const IndividualVideoCard = React.forwardRef<
     <div ref={ref} className="flex flex-row items-center gap-3 mb-2" role="listitem">
       <button
         className={`w-5 h-5 flex items-center justify-center rounded-md border-2 transition-all
-          ${video.completed 
-            ? 'bg-red-600 border-red-600' 
+          ${video.completed
+            ? 'bg-red-600 border-red-600'
             : 'bg-transparent border-zinc-700 hover:border-zinc-600'
           }
           focus:outline-none focus:ring-2 focus:ring-red-500
@@ -279,8 +278,8 @@ export const IndividualVideoCard = React.forwardRef<
       </button>
       <div
         className={`flex flex-row gap-3 p-3 hover:bg-zinc-900/50 w-full rounded-xl cursor-pointer transition-all
-          ${isSelected 
-            ? "bg-zinc-900 border border-zinc-800 shadow-lg" 
+          ${isSelected
+            ? "bg-zinc-900 border border-zinc-800 shadow-lg"
             : "border border-transparent hover:border-zinc-800"
           }
           focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -306,6 +305,9 @@ export const IndividualVideoCard = React.forwardRef<
           {isSelected && (
             <div className="absolute inset-0 bg-red-600/20 rounded-lg border-2 border-red-600" />
           )}
+          <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+            {video.duration || "10:00"}
+          </span>
         </div>
         <div className="flex flex-col justify-center flex-1 min-w-0">
           <p className={`text-sm line-clamp-2 ${isSelected ? 'text-white font-medium' : 'text-zinc-300'}`}>

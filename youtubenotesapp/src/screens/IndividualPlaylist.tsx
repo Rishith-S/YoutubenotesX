@@ -8,9 +8,8 @@ import Sidebar from "../components/Sidebar";
 import { Playlists } from "./Homescreen";
 import {
   ArrowLeft,
-  Pause,
-  Square,
-  RectangleHorizontal,
+  PanelLeft,
+  PanelBottom,
   Plus,
 } from "lucide-react";
 
@@ -65,8 +64,7 @@ export default function IndividualPlaylist() {
     try {
       setLoading(true);
       const res = await axios.get(
-        `${
-          import.meta.env.VITE_SERVER_URL
+        `${import.meta.env.VITE_SERVER_URL
         }/playList/getPlaylistVideos/${playlistId}`,
         { withCredentials: true }
       );
@@ -117,7 +115,7 @@ export default function IndividualPlaylist() {
     e.preventDefault();
     const videoIdMatch = newVideoUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^&\n?#]+)/);
     const videoId = videoIdMatch ? videoIdMatch[1] : null;
-    
+
     if (!videoId) {
       alert("Invalid YouTube URL");
       return;
@@ -150,9 +148,8 @@ export default function IndividualPlaylist() {
       style={{ height: "calc(100vh - 4rem)" }}
     >
       <div
-        className={`${
-          showSidebar ? "w-[28%]" : "w-14"
-        } transition-all duration-500 ease-in-out flex-shrink-0 h-full`}
+        className={`${showSidebar ? "w-[28%]" : "w-14"
+          } transition-all duration-500 ease-in-out flex-shrink-0 h-full`}
       >
         <Sidebar
           selectedVideo={selectedVideo}
@@ -181,38 +178,26 @@ export default function IndividualPlaylist() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+
               <button
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === "default"
-                    ? "bg-zinc-800 text-white"
-                    : "hover:bg-zinc-800 text-zinc-400"
-                }`}
-                onClick={() => setViewMode("default")}
-                title="Default view"
-              >
-                <Pause className="w-5 h-5" />
-              </button>
-              <button
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === "split"
-                    ? "bg-zinc-800 text-white"
-                    : "hover:bg-zinc-800 text-zinc-400"
-                }`}
+                className={`p-2 rounded-lg transition-colors ${viewMode === "split"
+                  ? "bg-zinc-800 text-white"
+                  : "hover:bg-zinc-800 text-zinc-400"
+                  }`}
                 onClick={() => setViewMode("split")}
                 title="Split view"
               >
-                <Square className="w-5 h-5" />
+                <PanelLeft className="w-5 h-5" />
               </button>
               <button
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === "theater"
-                    ? "bg-zinc-800 text-white"
-                    : "hover:bg-zinc-800 text-zinc-400"
-                }`}
+                className={`p-2 rounded-lg transition-colors ${viewMode === "theater"
+                  ? "bg-zinc-800 text-white"
+                  : "hover:bg-zinc-800 text-zinc-400"
+                  }`}
                 onClick={() => setViewMode("theater")}
                 title="Theater mode"
               >
-                <RectangleHorizontal className="w-5 h-5" />
+                <PanelBottom className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-zinc-800" />
               {playListDetails?.playListId.startsWith('custom-') && (
@@ -235,15 +220,13 @@ export default function IndividualPlaylist() {
             playListDetails?.playListContent &&
             selectedVideo < playListDetails?.playListContent.length && (
               <div
-                className={`h-full flex ${
-                  viewMode === "split" ? "flex-row" : "flex-col"
-                }`}
+                className={`h-full flex ${viewMode === "split" ? "flex-row" : "flex-col"
+                  }`}
               >
                 {/* Video Section */}
                 <div
-                  className={`bg-zinc-950 ${
-                    viewMode === "split" ? "w-1/2" : "w-full h-[65%]"
-                  } flex flex-col`}
+                  className={`bg-zinc-950 ${viewMode === "split" ? "w-1/2" : "w-full h-[65%]"
+                    } flex flex-col`}
                 >
                   {/* Video Player */}
                   <div className="flex-1 flex items-center justify-center bg-zinc-900 p-6">
@@ -261,13 +244,12 @@ export default function IndividualPlaylist() {
                 </div>
 
                 {/* Notes Section */}
-                <div className={`bg-black ${
-                  viewMode === 'split' ? 'w-1/2 border-l' : 'w-full h-[35%] border-t'
-                } border-zinc-800 flex flex-col overflow-hidden`}>
+                <div className={`bg-black ${viewMode === 'split' ? 'w-1/2 border-l' : 'w-full h-[35%] border-t'
+                  } border-zinc-800 flex flex-col overflow-hidden`}>
                   <Editor
                     videoId={playListDetails?.playListContent[selectedVideo].videoId}
                     playListId={playlistId as string}
-                    onSave={async () => {}}
+                    onSave={async () => { }}
                   />
                 </div>
               </div>

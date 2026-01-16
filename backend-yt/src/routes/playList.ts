@@ -7,6 +7,40 @@ import axios from "axios"
 
 const playListRouter = express.Router()
 
+function parseDuration(duration: string): string {
+  const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!matches) return "00:00";
+
+  const hours = parseInt(matches[1] || "0");
+  const minutes = parseInt(matches[2] || "0");
+  const seconds = parseInt(matches[3] || "0");
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+async function fetchVideoDurations(videoIds: string[]) {
+  if (videoIds.length === 0) return {};
+  try {
+    const response = await axios.get(
+      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds.join(',')}&key=${process.env.YOUTUBE_API_KEY}`
+    );
+    const durationMap: Record<string, string> = {};
+    if (response.data.items) {
+      response.data.items.forEach((item: any) => {
+        durationMap[item.id] = parseDuration(item.contentDetails.duration);
+      });
+    }
+    return durationMap;
+  } catch (error) {
+    console.error("Error fetching video durations:", error);
+    return {};
+  }
+}
+
+
 playListRouter.use(playlistLimiter);
 
 export interface UserJwtToken {
@@ -62,7 +96,7 @@ playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
       "";
     const data = response.data;
     if (data && (data as unknown as any).items) {
-      let videoList = (data as unknown as any).items.map(
+      let initialList = (data as unknown as any).items.map(
         (item: {
           snippet: {
             title: string;
@@ -79,12 +113,20 @@ playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
           completed: false
         })
       );
+
+      const videoIds = initialList.map((v: { videoId: string }) => v.videoId);
+      const durations = await fetchVideoDurations(videoIds);
+
+      let videoList = initialList.map((v: { videoId: string }) => ({
+        ...v,
+        duration: durations[v.videoId] || "00:00"
+      }));
       nextPageToken = (data as unknown as any).nextPageToken;
       while (nextPageToken && videoList.length <= 150) {
         const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&pageToken=${nextPageToken}&playlistId=${playListId}&key=${process.env.YOUTUBE_API_KEY}`;
         const response1 = await axios.get(url);
         nextPageToken = (response1.data as unknown as any).nextPageToken;
-        let videoList1 = (response1.data as unknown as any).items.map(
+        let videoList1Raw = (response1.data as unknown as any).items.map(
           (item: {
             snippet: {
               title: string;
@@ -101,6 +143,16 @@ playListRouter.get('/addPlaylist/:playListId', verifyAuth, async (req, res) => {
             completed: false
           })
         );
+
+        const videoIds1 = videoList1Raw.map((v: { videoId: string }) => v.videoId);
+        const durations1 = await fetchVideoDurations(videoIds1);
+
+        const videoList1 = videoList1Raw.map((v: { videoId: string }) => ({
+          ...v,
+          duration: durations1[v.videoId] || "00:00"
+        }));
+
+
         videoList = [...videoList, ...videoList1];
       }
       await prisma.playlist.create({
@@ -144,18 +196,18 @@ playListRouter.get('/getPlaylists', verifyAuth, async (req, res) => {
         userId: userDetails.id
       }
     })
-    
+
     const playlistsWithProgress = userPlayLists.map(playlist => {
       const completedCount = (playlist.playListContent as any[]).filter(
         video => video.completed === true
       ).length;
-      
+
       return {
         ...playlist,
         completedCount
       };
     });
-    
+
     res.status(200).json({
       "playLists": playlistsWithProgress
     })
@@ -275,7 +327,7 @@ playListRouter.get('/markAsCompleted/:playListDocumentId/:videoIndex', verifyAut
 playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
   const { playlistName, videoId } = req.body;
   const jwtToken = req.cookies.jwt;
-  
+
   try {
     const jwtDetails = jwt.decode(jwtToken) as UserJwtToken;
     const userDetails = await prisma.user.findUnique({
@@ -283,7 +335,7 @@ playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
         email: jwtDetails.user.email
       }
     });
-    
+
     if (!userDetails) {
       res.status(404).json({
         "message": "Account not found"
@@ -292,9 +344,9 @@ playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
     }
 
     // Fetch video details from YouTube API
-    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
     const videoResponse = await axios.get(videoUrl);
-    
+
     if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
       res.status(404).json({
         "message": "Video not found"
@@ -308,7 +360,8 @@ playListRouter.post('/createCustomPlaylist', verifyAuth, async (req, res) => {
       videoId: videoId,
       videoUrl: `https://www.youtube.com/embed/${videoId}`,
       thumbnail: videoData.snippet.thumbnails.default,
-      completed: false
+      completed: false,
+      duration: parseDuration(videoData.contentDetails.duration)
     };
 
     // Create custom playlist
@@ -339,7 +392,7 @@ playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, r
   const playlistId = req.params.playlistId;
   const { videoId } = req.body;
   const jwtToken = req.cookies.jwt;
-  
+
   try {
     const jwtDetails = jwt.decode(jwtToken) as UserJwtToken;
     const userDetails = await prisma.user.findUnique({
@@ -347,7 +400,7 @@ playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, r
         email: jwtDetails.user.email
       }
     });
-    
+
     if (!userDetails) {
       res.status(404).json({
         "message": "Account not found"
@@ -371,9 +424,9 @@ playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, r
     }
 
     // Fetch video details from YouTube API
-    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`;
     const videoResponse = await axios.get(videoUrl);
-    
+
     if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
       res.status(404).json({
         "message": "Video not found"
@@ -387,12 +440,13 @@ playListRouter.post('/addVideoToPlaylist/:playlistId', verifyAuth, async (req, r
       videoId: videoId,
       videoUrl: `https://www.youtube.com/embed/${videoId}`,
       thumbnail: videoData.snippet.thumbnails.default,
-      completed: false
+      completed: false,
+      duration: parseDuration(videoData.contentDetails.duration)
     };
 
     // Add video to playlist
     const updatedContent = [...(playlist.playListContent as any[]), videoInfo];
-    
+
     await prisma.playlist.update({
       where: {
         id: Number(playlistId)

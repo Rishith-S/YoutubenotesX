@@ -14,6 +14,7 @@ export interface IVideos {
   title: string;
   thumbnail: { url: string; height: number; width: number };
   completed: boolean;
+  duration?: string;
 }
 export interface Playlists {
   id: number;
@@ -47,6 +48,14 @@ export default function Homescreen() {
           (res.data as unknown as { playLists: Playlists[] }).playLists
         );
       } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("name");
+          navigate("/");
+        }
         console.error(error);
       } finally {
         setLoading(false);
@@ -77,8 +86,7 @@ export default function Homescreen() {
     try {
       setLoading(true);
       const res = await axios.delete(
-        `${
-          import.meta.env.VITE_SERVER_URL
+        `${import.meta.env.VITE_SERVER_URL
         }/playList/deletePlaylist/${playListDocumentId}`,
         {
           withCredentials: true,
@@ -188,7 +196,7 @@ export default function Homescreen() {
                 {item.playListContent.length} videos
               </p>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="px-4 pb-4 space-y-2 mt-auto">
               <div className="flex justify-between items-center text-xs">
@@ -201,11 +209,10 @@ export default function Homescreen() {
                 <div
                   className="bg-red-600 h-full rounded-full transition-all duration-300"
                   style={{
-                    width: `${
-                      item.playListContent.length > 0
+                    width: `${item.playListContent.length > 0
                         ? ((item.completedCount || 0) / item.playListContent.length) * 100
                         : 0
-                    }%`,
+                      }%`,
                   }}
                 />
               </div>
